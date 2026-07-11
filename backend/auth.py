@@ -6,11 +6,13 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db, Employee
 import bcrypt
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "payrollsecretkey2024clouddeploy"
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-secret-change-me")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 hours
-
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 def _hash_password_bcrypt(password: str) -> str:
     """Hash password using bcrypt directly to avoid passlib issues."""
     salt = bcrypt.gensalt()

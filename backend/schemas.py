@@ -138,6 +138,7 @@ class LeaveCreate(BaseModel):
     start_date: date
     end_date: date
     reason: str
+    agreed_to_deduction: Optional[bool] = False
 
 class LeaveUpdate(BaseModel):
     status: str

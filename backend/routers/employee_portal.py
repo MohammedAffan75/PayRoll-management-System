@@ -121,6 +121,46 @@ def apply_leave(
     if existing:
         raise HTTPException(status_code=400, detail="Overlapping leave request exists")
     
+    # Check leave limit and calculate deduction
+    leave_types = {
+        "annual": 20, "sick": 10, "casual": 8, "maternity": 180,
+        "paternity": 15, "bereavement": 5, "unpaid": 0
+    }
+    entitled_days = leave_types.get(leave_type, 0)
+    
+    year = start_date.year
+    used_leaves_records = db.query(database.LeaveRecord).filter(
+        database.LeaveRecord.employee_id == current_user.id,
+        database.LeaveRecord.status.in_(["approved", "pending"]),
+        database.LeaveRecord.leave_type == leave_type,
+        func.extract('year', database.LeaveRecord.start_date) == year
+    ).all()
+    
+    used_days = sum(r.days for r in used_leaves_records)
+    
+    if leave_type != "unpaid" and used_days + days > entitled_days:
+        excess_days = (used_days + days) - entitled_days
+        
+        salary = db.query(database.SalaryStructure).filter(
+            database.SalaryStructure.employee_id == current_user.id
+        ).first()
+        
+        if salary:
+            gross_salary = salary.basic_salary + salary.hra + salary.transport_allowance + salary.medical_allowance + salary.special_allowance
+            deduction_amount = round((gross_salary / 30) * excess_days, 2)
+        else:
+            deduction_amount = 0
+            
+        if not leave_request.agreed_to_deduction:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "DEDUCTION_REQUIRED",
+                    "message": f"Your {leave_type.capitalize()} leave limit has been exceeded by {excess_days} day(s). This will result in an estimated salary deduction of ₹{deduction_amount}. Do you agree to proceed?",
+                    "deduction_amount": deduction_amount
+                }
+            )
+            
     # Create leave record
     leave = database.LeaveRecord(
         employee_id=current_user.id,

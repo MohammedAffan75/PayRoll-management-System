@@ -4,7 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const DEPARTMENTS = ['Engineering', 'HR', 'Finance', 'Marketing', 'Sales', 'Operations', 'IT', 'Administration'];
 const LEAVE_TYPES = ['annual', 'sick', 'casual', 'maternity', 'paternity', 'bereavement', 'unpaid'];
@@ -2291,6 +2291,7 @@ const EmployeeLeaves = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [leaveBalance, setLeaveBalance] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [deductionPrompt, setDeductionPrompt] = useState(null);
   const [userGender, setUserGender] = useState('other');
 
   useEffect(() => {
@@ -2324,8 +2325,18 @@ const EmployeeLeaves = () => {
       fetchLeaveRequests();
       fetchLeaveBalance();
       setShowApplyModal(false);
+      setDeductionPrompt(null);
     } catch (err) {
-      alert('Leave application failed: ' + (err.response?.data?.detail || 'Unknown error'));
+      const detail = err.response?.data?.detail;
+      if (detail && detail.code === 'DEDUCTION_REQUIRED') {
+        setDeductionPrompt({
+          message: detail.message,
+          deductionAmount: detail.deduction_amount,
+          formData: formData
+        });
+      } else {
+        alert('Leave application failed: ' + (typeof detail === 'string' ? detail : JSON.stringify(detail) || 'Unknown error'));
+      }
     }
   };
 
@@ -2396,6 +2407,28 @@ const EmployeeLeaves = () => {
           onApply={handleApplyLeave}
           userGender={userGender}
         />
+      )}
+
+      {deductionPrompt && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-100 text-red-600 mb-6 mx-auto shadow-inner">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h2 className="text-2xl font-black text-center mb-3 text-slate-800">Leave Limit Exceeded</h2>
+            <p className="text-center text-slate-600 mb-6 text-sm leading-relaxed">{deductionPrompt.message}</p>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-8 text-center shadow-sm">
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Estimated Salary Deduction</p>
+              <p className="text-3xl font-black text-red-600">₹{deductionPrompt.deductionAmount?.toLocaleString()}</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeductionPrompt(null)} className="flex-1 py-3.5 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all">Cancel</button>
+              <button onClick={() => handleApplyLeave({ ...deductionPrompt.formData, agreed_to_deduction: true })} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-red-200/50">
+                Proceed
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

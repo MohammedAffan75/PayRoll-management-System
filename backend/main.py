@@ -13,9 +13,15 @@ import os
 
 app = FastAPI(title="Payroll Management System API", version="1.0.0")
 
+cors_origins_str = os.getenv("CORS_ORIGINS", "")
+if cors_origins_str:
+    origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+else:
+    origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
