@@ -2,11 +2,16 @@
 
 Full-stack payroll and HR platform with employee management, attendance tracking, leave workflows, payroll processing, and downloadable reports/payslips.
 
+## 🌐 Live Links
+
+- **Frontend:** https://pay-roll-management-system-lemon.vercel.app/
+- **API Documentation (Swagger):**https://payroll-management-system-11pk.onrender.com/docs
+- 
 ## Tech Stack
 
 - **Frontend:** React, Vite, Tailwind CSS, Framer Motion, Axios
 - **Backend:** FastAPI, SQLAlchemy, Pydantic
-- **Database:** SQLite (`backend/payroll.db`)
+- **Database:** Postgres
 - **Reporting:** ReportLab (PDF), CSV export
 
 ## Features
@@ -135,33 +140,6 @@ Interactive docs:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-## Deployment (AWS EC2 - Single Server)
-
-Recommended simple production setup:
-
-- **Frontend:** build with Vite, serve via Nginx
-- **Backend:** run FastAPI with `uvicorn` as `systemd` service
-- **Reverse proxy:** Nginx routes `/api` to backend on `127.0.0.1:8000`
-
-High-level steps:
-
-1. Launch Ubuntu EC2 instance
-2. Install Python, Node, Nginx
-3. Clone repository
-4. Setup backend venv + install requirements
-5. Create `systemd` service for backend
-6. Build frontend (`npm run build`)
-7. Configure Nginx for static frontend + `/api` proxy
-8. (Optional) Add HTTPS with Certbot
-
-## Notes
-
-- Current frontend API base is set in `frontend/src/App.jsx`:
-  - `const API_URL = 'http://localhost:8000/api';`
-- For production, consider migrating to:
-  - `const API_URL = import.meta.env.VITE_API_URL || '/api';`
-  - and use environment-specific `.env` values.
-
 ## Security & Production Recommendations
 
 - Move hardcoded secrets to environment variables (e.g. JWT secret)
@@ -169,7 +147,3 @@ High-level steps:
 - Use PostgreSQL (RDS) for scalable production
 - Add backups for database and logs
 - Add monitoring and centralized logging
-
-## License
-
-This project is for educational/internal use. Add a license file if you plan to open-source publicly.
